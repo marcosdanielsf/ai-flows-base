@@ -1,0 +1,1389 @@
+{
+  "name": "Agendar pelo GHL - ATUALIZAR KOMMO",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "API_KEY"
+            },
+            {
+              "name": "email"
+            },
+            {
+              "name": "telefone"
+            },
+            {
+              "name": "location_id"
+            },
+            {
+              "name": "calendar_id"
+            },
+            {
+              "name": "startTime"
+            },
+            {
+              "name": "firstName"
+            },
+            {
+              "name": "lastName"
+            },
+            {
+              "name": "lead_id"
+            },
+            {
+              "name": "estadoValue"
+            },
+            {
+              "name": "workPermitValue"
+            },
+            {
+              "name": "Carreira_Consultoria"
+            },
+            {
+              "name": "usuario_responsavel"
+            }
+          ]
+        }
+      },
+      "id": "670eaa28-e885-4af4-a29b-6e456b4c86ec",
+      "typeVersion": 1.1,
+      "name": "Start",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        -3200,
+        1376
+      ]
+    },
+    {
+      "parameters": {
+        "dataToSave": {
+          "values": [
+            {
+              "key": "telefone",
+              "value": "={{ $json.telefone }}"
+            },
+            {
+              "key": "email",
+              "value": "={{ $json.email }}"
+            },
+            {
+              "key": "usuario_responsavel",
+              "value": "={{ $json.usuario_responsavel }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executionData",
+      "typeVersion": 1.1,
+      "position": [
+        -2976,
+        1376
+      ],
+      "id": "6316d192-8992-49b0-81aa-2316c53f83b7",
+      "name": "Execution Data1"
+    },
+    {
+      "parameters": {
+        "resource": "contacts",
+        "filter": {
+          "query": "={{ $('Start').first().json.email }}"
+        },
+        "options": {},
+        "limit": 1
+      },
+      "type": "n8n-nodes-kommo.kommo",
+      "typeVersion": 1,
+      "position": [
+        -512,
+        1232
+      ],
+      "id": "ee7e3465-687e-463a-ac85-3c64d1abb57e",
+      "name": "Get list of contacts1",
+      "credentials": {
+        "kommoOAuth2Api": {
+          "id": "FoQopIcfFleo2ymy",
+          "name": "MottivmeAI - NV1 - Apex Pro"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-error",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "",
+              "operator": {
+                "type": "any",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "21b33b8a-80f3-429e-aaf7-fccf35250c34",
+              "leftValue": "={{ $json._embedded.contacts[0] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -288,
+        1232
+      ],
+      "id": "bec60a45-985b-4219-a2a5-56f81b04cfcf",
+      "name": "Busca OK?4",
+      "notes": "Verifica se a busca foi bem sucedida"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://apexpro.kommo.com/api/v4/leads/{{ $json.lead_id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "kommoOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"id\": {{ $json.lead_id }},\n  \"_embedded\": {},\n  \"status_id\": 77843928,\n  \"custom_fields_values\": [\n    {\n      \"field_id\": 2791521,\n      \"values\": [\n        { \"value\": \"Carreira\" }\n      ]\n    },\n    {\n      \"field_id\": 2791617,\n      \"values\": [\n        { \"value\": \"I.A\" }\n      ]\n    },\n    {\n      \"field_id\": 2785530,\n      \"values\": [\n        { \"value\": \"EU ME COMPROMETO EM ALTERAR\" }\n      ]\n    },\n    {\n      \"field_id\": 2788093,\n      \"values\": [\n        { \"value\": \"{{ $('Execution Data1').item.json.startTime }}\" }\n      ]\n    }\n  ]\n}\n",
+        "options": {}
+      },
+      "name": "🔄 Atualizar Lead Kommo1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1056,
+        1232
+      ],
+      "id": "aa1f3d26-3ebf-48e8-a32a-318717a60940",
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "kommoOAuth2Api": {
+          "id": "FoQopIcfFleo2ymy",
+          "name": "MottivmeAI - NV1 - Apex Pro"
+        }
+      },
+      "notes": "Atualiza custom fields do lead no Kommo após agendamento"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ff378f51-f140-46ce-86de-2c52d705c975",
+              "name": "lead_id",
+              "value": "={{ $json.lead_id }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        832,
+        1232
+      ],
+      "id": "34c99b17-9686-4983-a3db-1755df75b8a3",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "url": "=https://apexpro.kommo.com/api/v4/contacts/{{ $json._embedded.contacts[0].id }}?with=leads",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "kommoOAuth2Api",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        384,
+        1232
+      ],
+      "id": "33c7a1ab-7013-41f1-bbc4-db5f60d24ca3",
+      "name": "🔍 Buscar Leads do Contact1",
+      "credentials": {
+        "kommoOAuth2Api": {
+          "id": "FoQopIcfFleo2ymy",
+          "name": "MottivmeAI - NV1 - Apex Pro"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-error",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "",
+              "operator": {
+                "type": "any",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "21b33b8a-80f3-429e-aaf7-fccf35250c34",
+              "leftValue": "={{ $json._embedded.contacts }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        160,
+        1360
+      ],
+      "id": "3cc92109-3724-4d8a-ab76-d8265d106323",
+      "name": "Busca OK?5",
+      "notes": "Verifica se a busca foi bem sucedida"
+    },
+    {
+      "parameters": {
+        "resource": "contacts",
+        "filter": {
+          "query": "={{ $('Start').item.json.telefone }}"
+        },
+        "options": {},
+        "limit": 1
+      },
+      "type": "n8n-nodes-kommo.kommo",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        1360
+      ],
+      "id": "c2479434-5664-49fe-bae0-9d226ba06607",
+      "name": "Get list of contacts - Phone1",
+      "credentials": {
+        "kommoOAuth2Api": {
+          "id": "FoQopIcfFleo2ymy",
+          "name": "MottivmeAI - NV1 - Apex Pro"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pega o resultado e faz parse se for string\nlet contact;\nconst input = $input.first().json;\n\n// Se vier como string no campo 'data', faz parse\nif (typeof input.data === 'string') {\n  contact = JSON.parse(input.data);\n} else if (input.id) {\n  // Se já for objeto direto\n  contact = input;\n} else {\n  throw new Error('Formato de resposta inesperado');\n}\n\n// Extrai os leads\nconst leads = contact._embedded?.leads || [];\n\n// Se não tem leads\nif (leads.length === 0) {\n  return [{\n    json: {\n      tem_lead: false,\n      contact_id: contact.id,\n      mensagem: 'Contato sem lead vinculado'\n    }\n  }];\n}\n\n// Pega o primeiro lead\nconst lead = leads[0];\n\nreturn [{\n  json: {\n    tem_lead: true,\n    lead_id: lead.id,\n    lead_name: contact.name,\n    lead_status_id: lead.status_id || null,\n    lead_price: lead.price || 0,\n    contact_id: contact.id\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        608,
+        1232
+      ],
+      "id": "59a66d6b-a2ed-4b65-93f2-06f893c093ef",
+      "name": "Parse1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pega os dados de entrada\nconst items = $input.all();\n\n// Define o timezone padrão (Eastern Time)\nconst DEFAULT_TIMEZONE = '-05:00';\n\n// Processa cada item\nconst processedItems = items.map(item => {\n  let startTime = item.json.startTime;\n  \n  // Regex para verificar se já tem timezone no formato ISO 8601\n  const hasTimezone = /[+-]\\d{2}:\\d{2}$|Z$/.test(startTime);\n  \n  if (!hasTimezone) {\n    // Remove possíveis espaços e adiciona o timezone\n    startTime = startTime.trim() + DEFAULT_TIMEZONE;\n    console.log(`Timezone adicionado: ${startTime}`);\n  } else {\n    console.log(`Timezone já presente: ${startTime}`);\n  }\n  \n  // VALIDAÇÃO: Verifica se a data está no futuro\n  const appointmentDate = new Date(startTime);\n  const now = new Date();\n  \n  if (appointmentDate < now) {\n    throw new Error(`ERRO: Tentativa de agendar no passado! Data: ${appointmentDate.toISOString()}. Data atual: ${now.toISOString()}`);\n  }\n  \n  console.log(`Data validada com sucesso: ${appointmentDate.toISOString()}`);\n  \n  return {\n    json: {\n      contact_id: item.json.contact_id,\n      location_id: item.json.location_id,\n      calendar_id: item.json.calendar_id,\n      startTime: startTime\n    }\n  };\n});\n\nreturn processedItems;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1184,
+        1472
+      ],
+      "id": "54600c33-b21e-4fc4-845e-84372317d506",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "contact-id-assign",
+              "name": "contact_id",
+              "value": "={{ $('Search Contact por Email2').item?.json?.contacts?.[0]?.id ?? $('Search Contact por Phone3').item?.json?.contacts?.[0]?.id ?? $('Create Contact2').first().json.contact.id }}",
+              "type": "string"
+            },
+            {
+              "id": "location-id-assign",
+              "name": "location_id",
+              "value": "={{ $('Start').first().json.location_id }}",
+              "type": "string"
+            },
+            {
+              "id": "calendar-id-assign",
+              "name": "calendar_id",
+              "value": "={{ $('Start').first().json.calendar_id }}",
+              "type": "string"
+            },
+            {
+              "id": "starttime-assign",
+              "name": "startTime",
+              "value": "={{ $('Start').item.json.startTime }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1408,
+        1472
+      ],
+      "id": "fd8a8a97-e131-4c17-9394-82b3fc1ad8a2",
+      "name": "Preparar Dados Agendamento2"
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "=https://services.leadconnectorhq.com/contacts",
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "locationId",
+              "value": "={{ $('Start').item.json.location_id }}"
+            },
+            {
+              "name": "email",
+              "value": "={{ $('Start').item.json.email }}"
+            },
+            {
+              "name": "firstName",
+              "value": "={{ $('Start').item.json.firstName }}"
+            },
+            {
+              "name": "lastName",
+              "value": "={{ $('Start').item.json.lastName }}"
+            },
+            {
+              "name": "phone",
+              "value": "={{ $('Start').item.json.telefone }}"
+            }
+          ]
+        },
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Start').item.json.API_KEY }}"
+            },
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        }
+      },
+      "name": "Create Contact2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        -1632,
+        1664
+      ],
+      "id": "43be4350-a7d9-430f-90d8-7e4dd26a3f57",
+      "retryOnFail": true,
+      "notes": "Cria novo contato apenas se NÃO existir por email NEM telefone"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "status-field-phone",
+              "name": "status",
+              "value": "APPOINTMENT_JA_EXISTE",
+              "type": "string"
+            },
+            {
+              "id": "message-field-phone",
+              "name": "message",
+              "value": "⚠️ Contato já possui agendamento. Operação cancelada para evitar duplicata.",
+              "type": "string"
+            },
+            {
+              "id": "contact-id-field-phone",
+              "name": "contact_id",
+              "value": "={{ $('Search Contact por Phone3').item.json.contacts[0].id }}",
+              "type": "string"
+            },
+            {
+              "id": "contact-phone-field",
+              "name": "contact_phone",
+              "value": "={{ $('Search Contact por Phone3').item.json.contacts[0].phone }}",
+              "type": "string"
+            },
+            {
+              "id": "existing-appointments-field-phone",
+              "name": "existing_appointments",
+              "value": "={{ $json.events }}",
+              "type": "array"
+            },
+            {
+              "id": "appointment-count-field-phone",
+              "name": "appointment_count",
+              "value": "={{ $json.events.length }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1344,
+        1216
+      ],
+      "id": "777bae35-c9e1-430d-bd3c-dd441a198d27",
+      "name": "🛑 STOP - Appointment Duplicado (Phone)2",
+      "notes": "Para execução - já existe agendamento para este contato"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-appointments-exist-phone",
+              "leftValue": "={{ $json.events && $json.events.length > 0 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1632,
+        1472
+      ],
+      "id": "73a0f2d9-1ca0-4b2a-990e-5226fbb26d1a",
+      "name": "IF - Já Tem Appointment? (Phone)2",
+      "notes": "Verifica se já existe appointment agendado"
+    },
+    {
+      "parameters": {
+        "url": "=https://services.leadconnectorhq.com/contacts/{{ $json.contacts[0].id }}/appointments",
+        "options": {},
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Start').item.json.API_KEY }}"
+            },
+            {
+              "name": "Version",
+              "value": "2021-04-15"
+            }
+          ]
+        }
+      },
+      "name": "Buscar Appointments (Phone)3",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        -1856,
+        1472
+      ],
+      "id": "b37345e1-fdaa-4618-a7d7-a1cb024b8592",
+      "continueOnFail": true,
+      "notes": "Busca appointments do contato encontrado por TELEFONE"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e54ae733-9f48-415b-9402-bcbbdd268754",
+              "leftValue": "={{ $json.contacts?.[0]?.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -2080,
+        1568
+      ],
+      "id": "af129fbc-dfe5-4b3e-ace4-d96779e7e48c",
+      "name": "IF - Encontrou por Telefone?3",
+      "notes": "Verifica se encontrou contato por TELEFONE"
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "=https://services.leadconnectorhq.com/contacts/search",
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "locationId",
+              "value": "={{ $('Start').item.json.location_id }}"
+            },
+            {
+              "name": "pageLimit",
+              "value": "={{ 20 }}"
+            },
+            {
+              "name": "query",
+              "value": "={{ $('Start').item.json.telefone }}"
+            }
+          ]
+        },
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Start').item.json.API_KEY }}"
+            },
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        }
+      },
+      "name": "Search Contact por Phone3",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        -2304,
+        1568
+      ],
+      "id": "4f586825-4731-4095-9136-818a273e38a3",
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
+      "notes": "Busca contato por TELEFONE se não encontrou por email"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "status-field",
+              "name": "status",
+              "value": "APPOINTMENT_JA_EXISTE",
+              "type": "string"
+            },
+            {
+              "id": "message-field",
+              "name": "message",
+              "value": "⚠️ Contato já possui agendamento. Operação cancelada para evitar duplicata.",
+              "type": "string"
+            },
+            {
+              "id": "contact-id-field",
+              "name": "contact_id",
+              "value": "={{ $('Search Contact por Email2').item.json.contacts[0].id }}",
+              "type": "string"
+            },
+            {
+              "id": "contact-email-field",
+              "name": "contact_email",
+              "value": "={{ $('Search Contact por Email2').item.json.contacts[0].email }}",
+              "type": "string"
+            },
+            {
+              "id": "existing-appointments-field",
+              "name": "existing_appointments",
+              "value": "={{ $json.events }}",
+              "type": "array"
+            },
+            {
+              "id": "appointment-count-field",
+              "name": "appointment_count",
+              "value": "={{ $json.events.length }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1280,
+        944
+      ],
+      "id": "bdf133f9-0158-42df-ae80-1495f4e4f3bd",
+      "name": "🛑 STOP - Appointment Duplicado5",
+      "notes": "Para execução - já existe agendamento para este contato"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-appointments-exist",
+              "leftValue": "={{ $json.events && $json.events.length > 0 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1632,
+        1184
+      ],
+      "id": "05f0782b-01c0-40ee-8894-aefe74299a8e",
+      "name": "IF - Já Tem Appointment? (Email)2",
+      "notes": "Verifica se já existe appointment agendado"
+    },
+    {
+      "parameters": {
+        "url": "=https://services.leadconnectorhq.com/contacts/{{ $json.contacts[0].id }}/appointments",
+        "options": {},
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Start').item.json.API_KEY }}"
+            },
+            {
+              "name": "Version",
+              "value": "2021-04-15"
+            }
+          ]
+        }
+      },
+      "name": "Buscar Appointments (Email)2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        -1856,
+        1184
+      ],
+      "id": "8e7d17b0-7254-4927-aecf-86cec7b04c87",
+      "continueOnFail": true,
+      "notes": "Busca appointments do contato encontrado por EMAIL"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e54ae733-9f48-415b-9402-bcbbdd268754",
+              "leftValue": "={{ $json.contacts?.[0]?.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -2528,
+        1376
+      ],
+      "id": "bee1bbe6-47ab-4bf0-b451-4c07aa07efa5",
+      "name": "IF - Encontrou por Email?2",
+      "notes": "Valida se encontrou contato por EMAIL antes de buscar appointments"
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "=https://services.leadconnectorhq.com/contacts/search",
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "locationId",
+              "value": "={{ $json.location_id }}"
+            },
+            {
+              "name": "pageLimit",
+              "value": "={{ 20 }}"
+            },
+            {
+              "name": "query",
+              "value": "={{ $json.email }}"
+            }
+          ]
+        },
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.API_KEY }}"
+            },
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        }
+      },
+      "name": "Search Contact por Email2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        -2752,
+        1376
+      ],
+      "id": "d50c1853-2b11-4ed7-9d57-52077928eb6b",
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
+      "notes": "Busca contato por EMAIL"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-sucesso",
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            },
+            {
+              "id": "condition-sucesso-2",
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 299,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -736,
+        1472
+      ],
+      "id": "86574713-3a50-4849-b69a-8e69205c30f6",
+      "name": "Sucesso?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://services.leadconnectorhq.com/conversations/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer pit-fe627027-b9cb-4ea3-aaa4-149459e66a03"
+            },
+            {
+              "name": "Version",
+              "value": "2021-04-15"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"type\": \"SMS\",\n  \"contactId\": \"vjLP5amnYJNxzjQTVAu7\",\n  \"message\": \"❌ Erro ao agendar reunião\\n\\nResponsável: {{ $('Start').item.json.usuario_responsavel }}\\n\\nLead: {{ $('Start').item.json.email }}\\nHorário tentado: {{ $('Start').item.json.startTime }}\\n\\n🔗 Ver erro: https://cliente-a1.mentorfy.io/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -512,
+        1520
+      ],
+      "id": "6d1e182b-cbc4-4f9e-8eca-91d8159b5e16",
+      "name": "Whatsapp Erro",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://services.leadconnectorhq.com/calendars/events/appointments",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Start').item.json.API_KEY }}"
+            },
+            {
+              "name": "Version",
+              "value": "2021-04-15"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"calendarId\": \"{{ $json.calendar_id }}\",\n  \"locationId\": \"{{ $json.location_id }}\",\n  \"startTime\": \"{{ $json.startTime }}\",\n  \"contactId\": \"{{ $json.contact_id }}\"\n}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "name": "Agendar_reuniao3",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -944,
+        1328
+      ],
+      "id": "27a8e2bb-3fbf-4e4e-86a2-7b169010960f",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "dataToSave": {
+          "values": [
+            {
+              "key": "id",
+              "value": "={{ $json.conversationId }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executionData",
+      "typeVersion": 1.1,
+      "position": [
+        -224,
+        1584
+      ],
+      "id": "7d5d61af-25df-450c-b54d-7610f08fc0e4",
+      "name": "Execution Data"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1376,
+        2016
+      ],
+      "id": "810bf54f-2da2-4f52-a1f2-fd2c59e47ba0",
+      "name": "When clicking ‘Execute workflow’",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Primeiro, dropa se existir\nDROP FUNCTION IF EXISTS match_documents(vector, int, jsonb);\nDROP FUNCTION IF EXISTS match_n8n_docs(vector, int, jsonb);\n\n-- Cria a função com o nome que o n8n procura\nCREATE OR REPLACE FUNCTION match_documents (\n  query_embedding VECTOR(1536),\n  match_count INT DEFAULT 5,\n  filter JSONB DEFAULT '{}'\n) RETURNS TABLE (\n  id BIGINT,\n  content TEXT,\n  metadata JSONB,\n  similarity FLOAT\n)\nLANGUAGE plpgsql\nAS $$\nBEGIN\n  RETURN QUERY\n  SELECT\n    n8n_docs.id,\n    n8n_docs.content,\n    n8n_docs.metadata,\n    1 - (n8n_docs.embedding <=> query_embedding) AS similarity\n  FROM n8n_docs\n  WHERE n8n_docs.metadata @> filter\n  ORDER BY n8n_docs.embedding <=> query_embedding\n  LIMIT match_count;\nEND;\n$$;\n\n-- Verifica se criou\nSELECT proname FROM pg_proc WHERE proname = 'match_documents';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -1168,
+        2016
+      ],
+      "id": "3515a864-729c-4362-8f65-3d9f7085f87e",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "w2mBaRwhZ3tM4FUw",
+          "name": "Postgres Marcos Daniels."
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://services.leadconnectorhq.com/calendars/events/appointments",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Start').item.json.API_KEY }}"
+            },
+            {
+              "name": "Version",
+              "value": "2021-04-15"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"calendarId\": \"{{ $json.calendar_id }}\",\n  \"locationId\": \"{{ $json.location_id }}\",\n  \"startTime\": \"{{ $json.startTime }}\",\n  \"contactId\": \"{{ $json.contact_id }}\"\n}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "name": "Agendar_reuniao",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -944,
+        1472
+      ],
+      "id": "90be03c2-ae7d-472d-92b7-2d876aa3b3af",
+      "retryOnFail": true,
+      "waitBetweenTries": 3000
+    }
+  ],
+  "pinData": {
+    "Start": [
+      {
+        "json": {
+          "API_KEY": "pit-7f333e6f-a839-4f58-b371-778fed9dc2ea",
+          "email": "deplantasvidas@gmail.com",
+          "telefone": "+15082255771",
+          "location_id": "Bgi2hFMgiLLoRlOO0K5b",
+          "calendar_id": "LvZWMISiyYnF8p7TrY7q",
+          "startTime": "2025-12-16T11:00:00-05:00",
+          "firstName": "Josi",
+          "lastName": "A Lino",
+          "lead_id": "IrhVvb8QWtPlux8yqvvf",
+          "estadoValue": null,
+          "workPermitValue": null,
+          "Carreira_Consultoria": "Carreira",
+          "usuario_responsavel": "Marina Couto"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Execution Data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execution Data1": {
+      "main": [
+        [
+          {
+            "node": "Search Contact por Email2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get list of contacts1": {
+      "main": [
+        [
+          {
+            "node": "Busca OK?4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca OK?4": {
+      "main": [
+        [
+          {
+            "node": "🔍 Buscar Leads do Contact1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get list of contacts - Phone1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "🔄 Atualizar Lead Kommo1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔍 Buscar Leads do Contact1": {
+      "main": [
+        [
+          {
+            "node": "Parse1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca OK?5": {
+      "main": [
+        [
+          {
+            "node": "🔍 Buscar Leads do Contact1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get list of contacts - Phone1": {
+      "main": [
+        [
+          {
+            "node": "Busca OK?5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Agendar_reuniao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Contact2": {
+      "main": [
+        [
+          {
+            "node": "Preparar Dados Agendamento2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Já Tem Appointment? (Phone)2": {
+      "main": [
+        [
+          {
+            "node": "🛑 STOP - Appointment Duplicado (Phone)2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Preparar Dados Agendamento2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Appointments (Phone)3": {
+      "main": [
+        [
+          {
+            "node": "IF - Já Tem Appointment? (Phone)2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Encontrou por Telefone?3": {
+      "main": [
+        [
+          {
+            "node": "Buscar Appointments (Phone)3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Contact2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Contact por Phone3": {
+      "main": [
+        [
+          {
+            "node": "IF - Encontrou por Telefone?3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Já Tem Appointment? (Email)2": {
+      "main": [
+        [
+          {
+            "node": "🛑 STOP - Appointment Duplicado5",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Preparar Dados Agendamento2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Appointments (Email)2": {
+      "main": [
+        [
+          {
+            "node": "IF - Já Tem Appointment? (Email)2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Encontrou por Email?2": {
+      "main": [
+        [
+          {
+            "node": "Buscar Appointments (Email)2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Search Contact por Phone3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Contact por Email2": {
+      "main": [
+        [
+          {
+            "node": "IF - Encontrou por Email?2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Dados Agendamento2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🛑 STOP - Appointment Duplicado5": {
+      "main": [
+        [
+          {
+            "node": "Get list of contacts1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sucesso?": {
+      "main": [
+        [
+          {
+            "node": "Get list of contacts1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Whatsapp Erro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agendar_reuniao3": {
+      "main": [
+        [
+          {
+            "node": "Sucesso?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Whatsapp Erro": {
+      "main": [
+        [
+          {
+            "node": "Execution Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agendar_reuniao": {
+      "main": [
+        [
+          {
+            "node": "Sucesso?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "errorWorkflow": "WnRF9AdjFBkEW9Ma"
+  },
+  "versionId": "37e3365b-f09c-433d-9187-9d3fa24ef0ff",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9d65e6caa0e89e696b77790e020391d74468b15f71b3dcdb63aad81f090f5e69"
+  },
+  "id": "u1UsmjNNpaEiwIsp",
+  "tags": [
+    {
+      "updatedAt": "2025-11-03T19:28:46.270Z",
+      "createdAt": "2025-11-03T19:28:46.270Z",
+      "id": "3znkt8vlq1yubGAB",
+      "name": "on"
+    }
+  ]
+}

@@ -1,0 +1,495 @@
+{
+  "name": "Contador de Tentativas de Objeção",
+  "nodes": [
+    {
+      "parameters": {
+        "dataToSave": {
+          "values": [
+            {
+              "key": "telefone",
+              "value": "={{ $json.telefone }}"
+            },
+            {
+              "key": "email",
+              "value": "={{ $json.email }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executionData",
+      "typeVersion": 1.1,
+      "position": [
+        -1872,
+        -800
+      ],
+      "id": "835eb3d3-4252-4059-9684-0bfc774fa946",
+      "name": "Execution Data"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1b2c3d4",
+              "name": "contact_id",
+              "value": "={{ $json.contact_id }}",
+              "type": "string"
+            },
+            {
+              "id": "b2c3d4e5",
+              "name": "tipo_objecao",
+              "value": "={{ $json.tipo_objecao }}",
+              "type": "string"
+            },
+            {
+              "id": "c3d4e5f6",
+              "name": "acao",
+              "value": "={{ $json.acao }}",
+              "type": "string"
+            },
+            {
+              "id": "d4e5f6g7",
+              "name": "location_id",
+              "value": "={{ $json.location_id }}",
+              "type": "string"
+            },
+            {
+              "id": "e5f6g7h8",
+              "name": "api_key",
+              "value": "={{ $json.api_key }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "365d3792-af8b-4337-b177-b11637f85362",
+      "name": "Validar Inputs",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1568,
+        -800
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://services.leadconnectorhq.com/contacts/{{ $json.contact_id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "goHighLevelApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.api_key }}"
+            },
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5bd8b40b-b3d6-4cfc-8602-19960e981e60",
+      "name": "GHL - Buscar Contact",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1360,
+        -800
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "f1g2h3i4",
+              "leftValue": "={{ $json.acao }}",
+              "rightValue": "incrementar",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "de525c84-e3ca-411b-a1d5-439d03941740",
+      "name": "Ação é Incrementar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -1136,
+        -800
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Mapear tipo de objeção para campo correto\nconst tipoObjecao = $input.first().json.tipo_objecao;\nconst contact = $input.first().json.contact;\n\n// Determinar campo do custom field\nconst campoMap = {\n  'nao_tem_tempo': 'objecao_tempo_tentativas',\n  'nao_tem_dinheiro': 'objecao_dinheiro_tentativas',\n  'precisa_pensar': 'objecao_pensar_tentativas',\n  'nao_sabe_vender': 'objecao_vender_tentativas'\n};\n\nconst campo = campoMap[tipoObjecao] || 'objecao_tempo_tentativas';\n\n// Buscar valor atual do custom field\nconst customFields = contact.customFields || [];\nlet tentativasAtuais = 0;\n\nfor (const cf of customFields) {\n  if (cf.key === campo) {\n    tentativasAtuais = parseInt(cf.value) || 0;\n    break;\n  }\n}\n\n// Incrementar\nconst novasTentativas = tentativasAtuais + 1;\n\n// Determinar se deve fazer follow-up (>= 3 tentativas)\nconst deveFazerFollowup = novasTentativas >= 3;\n\nreturn {\n  json: {\n    contact_id: $input.first().json.contact_id,\n    location_id: $input.first().json.location_id,\n    api_key: $input.first().json.api_key,\n    campo_custom_field: campo,\n    tentativas_atuais: tentativasAtuais,\n    novas_tentativas: novasTentativas,\n    deve_fazer_followup: deveFazerFollowup,\n    tipo_objecao: tipoObjecao\n  }\n};"
+      },
+      "id": "d59bd60f-a5ae-4f5b-a167-7be3cc25f807",
+      "name": "Calcular Novas Tentativas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -912,
+        -912
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://services.leadconnectorhq.com/contacts/{{ $json.contact_id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "goHighLevelApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.api_key }}"
+            },
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"customFields\": [\n    {\n      \"key\": \"{{ $json.campo_custom_field }}\",\n      \"field_value\": \"{{ $json.novas_tentativas }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "251e001d-201d-4efe-b5a2-6542cfa346a1",
+      "name": "GHL - Atualizar Tentativas",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -688,
+        -912
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "g2h3i4j5",
+              "name": "tentativas_atuais",
+              "value": "={{ $json.novas_tentativas }}",
+              "type": "number"
+            },
+            {
+              "id": "h3i4j5k6",
+              "name": "deve_fazer_followup",
+              "value": "={{ $json.deve_fazer_followup }}",
+              "type": "boolean"
+            },
+            {
+              "id": "i4j5k6l7",
+              "name": "tipo_objecao",
+              "value": "={{ $json.tipo_objecao }}",
+              "type": "string"
+            },
+            {
+              "id": "j5k6l7m8",
+              "name": "mensagem",
+              "value": "={{ $json.deve_fazer_followup ? 'Limite de 3 tentativas atingido. Agendar follow-up estratégico.' : 'Pode tentar mais ' + (3 - $json.novas_tentativas) + ' vez(es)' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b510f0cc-2b34-4503-9926-e7aefef4e804",
+      "name": "Retornar Resultado Incrementar",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -480,
+        -912
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Consultar tentativas atuais sem incrementar\nconst tipoObjecao = $input.first().json.tipo_objecao;\nconst contact = $input.first().json.contact;\n\nconst campoMap = {\n  'nao_tem_tempo': 'objecao_tempo_tentativas',\n  'nao_tem_dinheiro': 'objecao_dinheiro_tentativas',\n  'precisa_pensar': 'objecao_pensar_tentativas',\n  'nao_sabe_vender': 'objecao_vender_tentativas'\n};\n\nconst campo = campoMap[tipoObjecao] || 'objecao_tempo_tentativas';\nconst customFields = contact.customFields || [];\nlet tentativasAtuais = 0;\n\nfor (const cf of customFields) {\n  if (cf.key === campo) {\n    tentativasAtuais = parseInt(cf.value) || 0;\n    break;\n  }\n}\n\nconst deveFazerFollowup = tentativasAtuais >= 3;\n\nreturn {\n  json: {\n    tentativas_atuais: tentativasAtuais,\n    deve_fazer_followup: deveFazerFollowup,\n    tipo_objecao: tipoObjecao,\n    mensagem: deveFazerFollowup ? 'Limite de 3 tentativas atingido. Agendar follow-up estratégico.' : `Pode tentar mais ${3 - tentativasAtuais} vez(es)`\n  }\n};"
+      },
+      "id": "a02ebc5a-21aa-4516-90f1-e9269cc4d827",
+      "name": "Consultar Tentativas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -912,
+        -704
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://services.leadconnectorhq.com/contacts/{{ $json.contact_id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "goHighLevelApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.api_key }}"
+            },
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"customFields\": [\n    {\n      \"key\": \"objecao_tempo_tentativas\",\n      \"field_value\": \"0\"\n    },\n    {\n      \"key\": \"objecao_dinheiro_tentativas\",\n      \"field_value\": \"0\"\n    },\n    {\n      \"key\": \"objecao_pensar_tentativas\",\n      \"field_value\": \"0\"\n    },\n    {\n      \"key\": \"objecao_vender_tentativas\",\n      \"field_value\": \"0\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "4525fd3d-4536-45e5-9d5b-333814ac8065",
+      "name": "GHL - Resetar Todas Tentativas",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -912,
+        -512
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "k6l7m8n9",
+              "name": "mensagem",
+              "value": "Todas tentativas resetadas para 0",
+              "type": "string"
+            },
+            {
+              "id": "l7m8n9o0",
+              "name": "tentativas_atuais",
+              "value": "0",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "39315498-403c-435a-9c7f-051fb03122a8",
+      "name": "Retornar Resultado Reset",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -688,
+        -512
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "m8n9o0p1",
+              "leftValue": "={{ $('Validar Inputs').item.json.acao }}",
+              "rightValue": "resetar",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3e011220-d7bf-44d6-880c-59548b8ae3d7",
+      "name": "Ação é Resetar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -1136,
+        -608
+      ]
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "contact_id"
+            },
+            {
+              "name": "tipo_objecao"
+            },
+            {
+              "name": "acao"
+            },
+            {
+              "name": "location_id"
+            },
+            {
+              "name": "api_key"
+            }
+          ]
+        }
+      },
+      "id": "85388548-95ef-4a47-8f07-dea39001ddb6",
+      "typeVersion": 1.1,
+      "name": "Start",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        -2096,
+        -800
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Execution Data": {
+      "main": [
+        [
+          {
+            "node": "Validar Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar Inputs": {
+      "main": [
+        [
+          {
+            "node": "GHL - Buscar Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GHL - Buscar Contact": {
+      "main": [
+        [
+          {
+            "node": "Ação é Incrementar?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Ação é Resetar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ação é Incrementar?": {
+      "main": [
+        [
+          {
+            "node": "Calcular Novas Tentativas",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Consultar Tentativas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular Novas Tentativas": {
+      "main": [
+        [
+          {
+            "node": "GHL - Atualizar Tentativas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GHL - Atualizar Tentativas": {
+      "main": [
+        [
+          {
+            "node": "Retornar Resultado Incrementar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ação é Resetar?": {
+      "main": [
+        [
+          {
+            "node": "GHL - Resetar Todas Tentativas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GHL - Resetar Todas Tentativas": {
+      "main": [
+        [
+          {
+            "node": "Retornar Resultado Reset",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Execution Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f841c47f-b7be-4074-b14c-c625f4bedfa0",
+  "meta": {
+    "instanceId": "9d65e6caa0e89e696b77790e020391d74468b15f71b3dcdb63aad81f090f5e69"
+  },
+  "id": "lOf0YiCHwnhHLzio",
+  "tags": []
+}

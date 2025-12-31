@@ -1,0 +1,275 @@
+{
+  "name": "Atualizar Estado GHL (Otimizado)",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "API_KEY"
+            },
+            {
+              "name": "location_id"
+            },
+            {
+              "name": "contact_id"
+            },
+            {
+              "name": "estadoValue"
+            }
+          ]
+        }
+      },
+      "id": "974343e6-adfd-4196-99a0-1b8e557e02bd",
+      "typeVersion": 1.1,
+      "name": "Start",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        -1472,
+        -768
+      ]
+    },
+    {
+      "parameters": {
+        "content": "v1 - tava dando erro na hora de agendar pq nao tava buscando a disponibilidade",
+        "height": 304,
+        "width": 1472
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1712,
+        -912
+      ],
+      "typeVersion": 1,
+      "id": "6e8eb5e2-7444-4e81-a818-262fa9a7e704",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "dataToSave": {
+          "values": [
+            {
+              "key": "estado",
+              "value": "={{ $json.estadoValue }}"
+            },
+            {
+              "key": "contact_id",
+              "value": "={{ $json.lead_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executionData",
+      "typeVersion": 1.1,
+      "position": [
+        -1248,
+        -768
+      ],
+      "id": "9492ed06-b9ba-44ed-b649-38e654d1730f",
+      "name": "Execution Data"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://services.leadconnectorhq.com/contacts/{{ $json.contactId }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.API_KEY }}"
+            },
+            {
+              "name": "Version",
+              "value": "2021-04-15"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"customFields\": [\n    {\n      \"id\": \"{{ $json.fieldId }}\",\n      \"value\": \"{{ $json.estadoValue }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -352,
+        -768
+      ],
+      "id": "23c9d354-e798-4db2-bcbc-0433a2f10534",
+      "name": "🔄 Atualizar Estado",
+      "notes": "Atualiza o campo customizado estado_onde_mora no contato"
+    },
+    {
+      "parameters": {
+        "url": "=https://services.leadconnectorhq.com/locations/{{ $json.location_id }}/customFields",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.API_KEY }}"
+            },
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1024,
+        -768
+      ],
+      "id": "4fc46eb3-ec8d-4b6e-988a-54a2953d011f",
+      "name": "1️⃣ Listar todos os campos"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "dea4eade-a0b7-4fa8-be10-478ffe2fed82",
+              "name": "fieldId",
+              "value": "={{ $json.estadoFieldId }}",
+              "type": "string"
+            },
+            {
+              "id": "8c5d3e2f-1a3b-4c5e-9f2a-7b8c9d0e1f2a",
+              "name": "contactId",
+              "value": "={{ $('Start').item.json.contact_id }}",
+              "type": "string"
+            },
+            {
+              "id": "3f4e5d6c-7b8a-9c0d-1e2f-3a4b5c6d7e8f",
+              "name": "estadoValue",
+              "value": "={{ $('Start').item.json.estadoValue }}",
+              "type": "string"
+            },
+            {
+              "id": "4a5b6c7d-8e9f-0a1b-2c3d-4e5f6a7b8c9d",
+              "name": "API_KEY",
+              "value": "={{ $('Start').item.json.API_KEY }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -576,
+        -768
+      ],
+      "id": "7a94a4ca-9249-4bd3-b530-49bfdc29a9b0",
+      "name": "estado"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pega a lista de custom fields do input anterior\nconst customFields = $input.first().json.customFields;\n\n// Encontra o campo \"Work Permit\"\nconst workPermitField = customFields.find(field => \n  field.name === \"Work Permit\"\n);\n\n// Encontra o campo \"Estado onde mora\"\nconst estadoField = customFields.find(field => \n  field.name === \"Estado onde mora\"\n);\n\n// Valida se encontrou ambos\nif (!workPermitField) {\n  throw new Error(\"Campo 'Work Permit' não encontrado!\");\n}\n\nif (!estadoField) {\n  throw new Error(\"Campo 'Estado onde mora' não encontrado!\");\n}\n\n// Retorna ambos os IDs\nreturn [{\n  json: {\n    workPermitFieldId: workPermitField.id,  // YFFXi3ByB0DuISqrq6MW\n    estadoFieldId: estadoField.id            // NBugndbaCqI3gGDn1gSB\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -800,
+        -768
+      ],
+      "id": "1900b3a3-cf6e-467c-9682-d0b9b2953311",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {
+    "Start": [
+      {
+        "json": {
+          "API_KEY": "pit-7f333e6f-a839-4f58-b371-778fed9dc2ea",
+          "location_id": "Bgi2hFMgiLLoRlOO0K5b",
+          "contact_id": "hUSt9aA0TwHoKUUToi4A",
+          "estadoValue": "Texas"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Execution Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execution Data": {
+      "main": [
+        [
+          {
+            "node": "1️⃣ Listar todos os campos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1️⃣ Listar todos os campos": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "estado": {
+      "main": [
+        [
+          {
+            "node": "🔄 Atualizar Estado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "estado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "7f2b9749-52f1-4856-8103-ecb72f48e653",
+  "meta": {
+    "instanceId": "9d65e6caa0e89e696b77790e020391d74468b15f71b3dcdb63aad81f090f5e69"
+  },
+  "id": "wsQQYmx8CLNBHoWq",
+  "tags": [
+    {
+      "updatedAt": "2025-11-03T19:28:46.270Z",
+      "createdAt": "2025-11-03T19:28:46.270Z",
+      "id": "3znkt8vlq1yubGAB",
+      "name": "on"
+    }
+  ]
+}

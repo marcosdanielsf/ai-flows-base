@@ -1,0 +1,335 @@
+{
+  "name": "[GHL - APEXPRO] Atualizar Lead",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Atualizar Lead KOMMO",
+        "height": 380,
+        "width": 1340
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -736,
+        224
+      ],
+      "id": "ecfaa4bb-2366-4278-a814-18f1b0d759c1",
+      "name": "Sticky Note10"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Prioritariamente a mensagem_fup deverá ser apagada e em seguida a data_msg_fup no formato ISO 8601 Y-m-d\\\\TH:i:sP deverá ser apagada para não fazer follow up desnecessário",
+        "method": "PATCH",
+        "url": "=https://apexpro.kommo.com/api/v4/leads/{{ $fromAI('lead_id') }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "kommoOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"id\": {{ $fromAI(\"lead_id\") }},\n  \"_embedded\": {},\n  \"custom_fields_values\": [\n    {\n      \"field_id\": 2796271,\n      \"values\": [\n        { \"value\": \"{{ $fromAI('data_msg_fup') }}\" }\n      ]\n    },\n    {\n      \"field_id\": 2796273,\n      \"values\": [\n        { \"value\": \"{{ $fromAI('mensagem_fup') }}\" }\n      ]\n    }\n  ]\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        -272,
+        720
+      ],
+      "id": "c88a1f3c-38cb-4148-9552-4ddfe7089707",
+      "name": "Cancelar followup",
+      "retryOnFail": true,
+      "credentials": {
+        "kommoOAuth2Api": {
+          "id": "FoQopIcfFleo2ymy",
+          "name": "MottivmeAI - NV1 - Apex Pro"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Atualiza os dados do lead reagendado no KOMMO. data_hora_reaagendamento deve ser no formato ISO 8601 Y-m-d\\\\TH:i:sP",
+        "method": "PATCH",
+        "url": "=https://apexpro.kommo.com/api/v4/leads/{{ $fromAI('lead_id') }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "kommoOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"id\": {{ $fromAI(\"lead_id\") }},\n  \"_embedded\": {},\n  \"status_id\": 77843936,\n  \"custom_fields_values\": [\n    {\n      \"field_id\": 2796721,\n      \"values\": [\n        { \"value\": \"{{ $fromAI('data_hora_reagendamento') }}\" }\n      ]\n    }\n  ]\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        -96,
+        720
+      ],
+      "id": "8bfa7e3d-7c24-464e-9a8a-6e74c530b464",
+      "name": "Atualizar lead reagendado",
+      "retryOnFail": true,
+      "credentials": {
+        "kommoOAuth2Api": {
+          "id": "FoQopIcfFleo2ymy",
+          "name": "MottivmeAI - NV1 - Apex Pro"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Atualiza campos do lead no Kommo assim que cada resposta é recebida.",
+        "method": "PATCH",
+        "url": "=https://apexpro.kommo.com/api/v4/leads/{{ $fromAI('lead_id') }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "kommoOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"id\": {{ $fromAI(\"lead_id\") }},\n  \"_embedded\": {},\n  \"custom_fields_values\": [\n    {\n      \"field_id\": 2798553,\n      \"values\": [\n        {\n          \"value\": \"{{ $fromAI('profissao_cf') }}\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        464,
+        448
+      ],
+      "id": "bb87c7a0-ade5-4bad-baef-dec429b69249",
+      "name": "Atualizar_profissao",
+      "retryOnFail": true,
+      "credentials": {
+        "kommoOAuth2Api": {
+          "id": "FoQopIcfFleo2ymy",
+          "name": "MottivmeAI - NV1 - Apex Pro"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "path": "8467f71e-9a20-4f6f-81d2-8d1a859b0542"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -256,
+        256
+      ],
+      "id": "90e06eb2-6b6e-4cf3-967a-c2d168b1a23f",
+      "name": "MCP GHL",
+      "webhookId": "8467f71e-9a20-4f6f-81d2-8d1a859b0542"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Atualizar estado onde o lead mora nos EUA. Quando o lead mencionar um estado (sigla ou nome completo), converta para o nome completo oficial em inglês. Exemplos: FL→Florida, NY→New York, CA→California, TX→Texas, MA→Massachusetts.",
+        "method": "PUT",
+        "url": "https://services.leadconnectorhq.com/contacts/{contact_Id}",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Authorization",
+              "valueProvider": "fieldValue",
+              "value": "=Bearer {{ $('Info').item.json.api_key }}"
+            },
+            {
+              "name": "Version",
+              "valueProvider": "fieldValue",
+              "value": "2021-04-15"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"state\": \"{state}\"\n}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "contact_Id",
+              "description": "ID do contato",
+              "type": "string"
+            },
+            {
+              "name": "state",
+              "description": "Nome completo do estado em inglês"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        304,
+        448
+      ],
+      "id": "70d30f43-5730-426f-84f4-c1cdd59813e7",
+      "name": "Atualizar_estado_onde_mora"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Adicionar tag 'perdido'. Use quando o lead se enquadrar em qualquer situação: já cadastrado, é agente, mora no Brasil, sem interesse, ou está insatisfeito. Motivo da desqualificação deve ser especificado.",
+        "method": "PUT",
+        "url": "https://services.leadconnectorhq.com/contacts/{contact_Id}",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Authorization",
+              "valueProvider": "fieldValue",
+              "value": "=Bearer {{ $('Info').item.json['api key v2'] }}"
+            },
+            {
+              "name": "Version",
+              "valueProvider": "fieldValue",
+              "value": "2021-04-15"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"tags\": [\"perdido\"]\n}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "contact_Id",
+              "description": "ID do contato",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        608,
+        464
+      ],
+      "id": "8c048bca-5721-48a1-832f-1fb496f63453",
+      "name": "Atualizar_lead_perdido"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Atualizar se o lead possui work permit. Valores: 'Sim', 'Não', 'Em processo'. Campo ID: 814630",
+        "method": "PUT",
+        "url": "https://services.leadconnectorhq.com/contacts/{contact_Id}",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Authorization",
+              "valueProvider": "fieldValue",
+              "value": "=Bearer {{ $('Info').item.json.api_key }}"
+            },
+            {
+              "name": "Version",
+              "valueProvider": "fieldValue",
+              "value": "2021-04-15"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"customFields\": [\n    {\n      \"id\": \"YFFXi3ByB0DuISqrq6MW\",\n      \"value\": \"{work_permit}\"\n    }\n  ]\n}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "contact_Id",
+              "description": "ID do contato",
+              "type": "string"
+            },
+            {
+              "name": "work_permit",
+              "description": "Status do work permit: Sim ou Não",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        96,
+        464
+      ],
+      "id": "258f31fa-24ea-461f-b496-19c0d2b69b99",
+      "name": "Atualizar_work_permit"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Cancelar followup": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP GHL",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar lead reagendado": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP GHL",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar_profissao": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP GHL",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar_estado_onde_mora": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP GHL",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar_lead_perdido": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP GHL",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar_work_permit": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP GHL",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "fd4200fc-3805-433a-a085-45ade3f5170d",
+  "meta": {
+    "instanceId": "9d65e6caa0e89e696b77790e020391d74468b15f71b3dcdb63aad81f090f5e69"
+  },
+  "id": "ZmioyCr3EbktOvAt",
+  "tags": []
+}

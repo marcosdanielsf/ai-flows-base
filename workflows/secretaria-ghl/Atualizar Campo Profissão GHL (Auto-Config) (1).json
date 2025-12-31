@@ -1,0 +1,397 @@
+{
+  "name": "Atualizar Campo Profissão GHL (Auto-Config)",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "API_KEY"
+            },
+            {
+              "name": "location_id"
+            },
+            {
+              "name": "contact_id"
+            },
+            {
+              "name": "profissaoValue"
+            }
+          ]
+        }
+      },
+      "id": "d0c97d4f-9533-43cd-ab3a-6c83b1bdb78b",
+      "typeVersion": 1.1,
+      "name": "Start",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        -1152,
+        -400
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://services.leadconnectorhq.com/locations/{{ $json.location_id }}/customFields",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.API_KEY }}"
+            },
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -928,
+        -400
+      ],
+      "id": "65fb97d1-98e6-482d-a022-3c3942d8093b",
+      "name": "1️⃣ Listar Campos"
+    },
+    {
+      "parameters": {
+        "jsCode": "// =====================================================\n// 🔧 CONFIGURAÇÃO DO CAMPO (EDITE AQUI)\n// =====================================================\n\nconst FIELD_CONFIG = {\n  name: \"Profissão\",\n  fieldKey: \"contact.profissao\",\n  dataType: \"TEXT\",\n  placeholder: \"Ex: Engenheiro, Professor, Empresário...\",\n  position: 850\n  // Para SINGLE_OPTIONS, adicione:\n  // options: [\"Opção 1\", \"Opção 2\", \"Opção 3\"]\n};\n\n// =====================================================\n// 🔍 LÓGICA DE BUSCA (NÃO EDITAR)\n// =====================================================\n\nconst customFields = $input.first().json.customFields || [];\n\n// Pega dados do Start de múltiplas formas para garantir\nlet startData = {};\ntry {\n  startData = $('Start').first().json || {};\n} catch (e) {\n  startData = {};\n}\n\n// Também tenta pegar do item atual (fallback)\nconst currentItem = $input.first().json || {};\n\n// Combina as fontes - prioriza Start, depois currentItem\nconst API_KEY = startData.API_KEY || currentItem.API_KEY || null;\nconst location_id = startData.location_id || currentItem.location_id || null;\nconst contact_id = startData.contact_id || currentItem.contact_id || null;\nconst fieldValue = startData.fieldValue || startData.profissaoValue || currentItem.fieldValue || currentItem.profissaoValue || null;\n\n// Busca o campo pelo nome\nconst campoExistente = customFields.find(f => f.name === FIELD_CONFIG.name);\n\n// Retorna resultado (mesmo código para ambos os casos)\nreturn [{\n  json: {\n    fieldId: campoExistente ? campoExistente.id : null,\n    fieldExists: !!campoExistente,\n    fieldConfig: FIELD_CONFIG,\n    contactId: contact_id,\n    fieldValue: fieldValue,\n    API_KEY: API_KEY,\n    location_id: location_id\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -704,
+        -400
+      ],
+      "id": "f84e620d-2976-46e9-8d00-e8e10ef57ae9",
+      "name": "2️⃣ Verificar Campo"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "field-exists-check",
+              "leftValue": "={{ $json.fieldExists }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -480,
+        -400
+      ],
+      "id": "f196446d-5f8a-43e5-a8f4-e5518d7f254b",
+      "name": "3️⃣ Campo Existe?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://services.leadconnectorhq.com/locations/{{ $json.location_id }}/customFields",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.API_KEY }}"
+            },
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.fieldConfig) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -256,
+        -304
+      ],
+      "id": "dfe4bde2-98a8-4f2c-b575-b5d46bc71f6b",
+      "name": "4️⃣ Criar Campo",
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "field-id-from-create",
+              "name": "fieldId",
+              "value": "={{ $json.customField?.id || $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "contact-id",
+              "name": "contactId",
+              "value": "={{ $('2️⃣ Verificar Campo').first().json.contactId }}",
+              "type": "string"
+            },
+            {
+              "id": "field-value",
+              "name": "fieldValue",
+              "value": "={{ $('2️⃣ Verificar Campo').first().json.fieldValue }}",
+              "type": "string"
+            },
+            {
+              "id": "api-key",
+              "name": "API_KEY",
+              "value": "={{ $('2️⃣ Verificar Campo').first().json.API_KEY }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -32,
+        -304
+      ],
+      "id": "5213329e-bf6e-446e-9d16-4c28b67bf401",
+      "name": "5️⃣ Preparar Dados (Após Criar)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "field-id-exists",
+              "name": "fieldId",
+              "value": "={{ $json.fieldId }}",
+              "type": "string"
+            },
+            {
+              "id": "contact-id-exists",
+              "name": "contactId",
+              "value": "={{ $json.contactId }}",
+              "type": "string"
+            },
+            {
+              "id": "field-value-exists",
+              "name": "fieldValue",
+              "value": "={{ $json.fieldValue }}",
+              "type": "string"
+            },
+            {
+              "id": "api-key-exists",
+              "name": "API_KEY",
+              "value": "={{ $json.API_KEY }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -32,
+        -496
+      ],
+      "id": "bcb8a9c5-16ed-4ae7-b9eb-96407937576d",
+      "name": "5️⃣ Preparar Dados (Existente)"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://services.leadconnectorhq.com/contacts/{{ $json.contactId }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.API_KEY }}"
+            },
+            {
+              "name": "Version",
+              "value": "2021-04-15"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"customFields\": [\n    {\n      \"id\": \"{{ $json.fieldId }}\",\n      \"value\": \"{{ $json.fieldValue }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        192,
+        -400
+      ],
+      "id": "2315975c-1a29-4fba-86c9-5d7a010f81e0",
+      "name": "7️⃣ Atualizar Contato",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "content": "## 🔧 TOOL AUTO-CONFIGURÁVEL\n\n### Como usar:\n1. Duplique este workflow\n2. Edite APENAS o bloco `FIELD_CONFIG` no node \"2️⃣ Verificar Campo\"\n3. Renomeie o workflow\n\n### Configurações disponíveis:\n\n**Campo TEXT:**\n```javascript\nconst FIELD_CONFIG = {\n  name: \"Nome do Campo\",\n  fieldKey: \"contact.nome_interno\",\n  dataType: \"TEXT\",\n  placeholder: \"Exemplo...\",\n  position: 100\n};\n```\n\n**Campo DROPDOWN:**\n```javascript\nconst FIELD_CONFIG = {\n  name: \"Status\",\n  fieldKey: \"contact.status\",\n  dataType: \"SINGLE_OPTIONS\",\n  placeholder: \"Selecione...\",\n  position: 100,\n  options: [\"Opção 1\", \"Opção 2\"]\n};\n```\n\n### Fluxo:\n```\nStart → Listar → Verificar → IF\n                              ├─ SIM → Preparar → Merge → Atualizar\n                              └─ NÃO → Criar → Preparar → Merge → Atualizar\n```",
+        "height": 820,
+        "width": 768,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1328,
+        -160
+      ],
+      "typeVersion": 1,
+      "id": "1e8b26af-8acc-4481-9a24-bf0a7a0c10e3",
+      "name": "📌 Documentação"
+    },
+    {
+      "parameters": {
+        "content": "## ⚙️ EDITE AQUI\n\nNo node \"2️⃣ Verificar Campo\", altere o `FIELD_CONFIG` para o campo desejado.",
+        "height": 120,
+        "width": 300,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -384,
+        368
+      ],
+      "typeVersion": 1,
+      "id": "dcfac097-7a47-4a8e-9a4c-38b4482e8fa6",
+      "name": "⚠️ Config"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "1️⃣ Listar Campos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1️⃣ Listar Campos": {
+      "main": [
+        [
+          {
+            "node": "2️⃣ Verificar Campo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2️⃣ Verificar Campo": {
+      "main": [
+        [
+          {
+            "node": "3️⃣ Campo Existe?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3️⃣ Campo Existe?": {
+      "main": [
+        [
+          {
+            "node": "5️⃣ Preparar Dados (Existente)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "4️⃣ Criar Campo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4️⃣ Criar Campo": {
+      "main": [
+        [
+          {
+            "node": "5️⃣ Preparar Dados (Após Criar)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5️⃣ Preparar Dados (Existente)": {
+      "main": [
+        [
+          {
+            "node": "7️⃣ Atualizar Contato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5️⃣ Preparar Dados (Após Criar)": {
+      "main": [
+        [
+          {
+            "node": "7️⃣ Atualizar Contato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "cd313cd0-0c3e-4a97-bae4-c13a88fa1ee1",
+  "meta": {
+    "instanceId": "9d65e6caa0e89e696b77790e020391d74468b15f71b3dcdb63aad81f090f5e69"
+  },
+  "id": "Kq3b79P6v4rTsiaH",
+  "tags": [
+    {
+      "updatedAt": "2025-11-03T19:28:46.270Z",
+      "createdAt": "2025-11-03T19:28:46.270Z",
+      "id": "3znkt8vlq1yubGAB",
+      "name": "on"
+    }
+  ]
+}

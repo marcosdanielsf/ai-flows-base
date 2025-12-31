@@ -1,0 +1,275 @@
+{
+  "name": "Atualizar Agente IA GHL",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "API_KEY"
+            },
+            {
+              "name": "location_id"
+            },
+            {
+              "name": "contact_id"
+            },
+            {
+              "name": "agenteValue"
+            }
+          ]
+        }
+      },
+      "id": "05f03945-3351-4911-b9ad-03b9b03539a9",
+      "typeVersion": 1.1,
+      "name": "Start",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        -1472,
+        -768
+      ]
+    },
+    {
+      "parameters": {
+        "content": "v1 - tava dando erro na hora de agendar pq nao tava buscando a disponibilidade",
+        "height": 304,
+        "width": 1472
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1712,
+        -912
+      ],
+      "typeVersion": 1,
+      "id": "1b3b660b-b83e-4f23-b2ac-d6dcd5a6ca3b",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "dataToSave": {
+          "values": [
+            {
+              "key": "estado",
+              "value": "={{ $json.estadoValue }}"
+            },
+            {
+              "key": "contact_id",
+              "value": "={{ $json.lead_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executionData",
+      "typeVersion": 1.1,
+      "position": [
+        -1248,
+        -768
+      ],
+      "id": "2b236474-65a0-4055-969e-fefb2caab6e7",
+      "name": "Execution Data"
+    },
+    {
+      "parameters": {
+        "url": "=https://services.leadconnectorhq.com/locations/{{ $json.location_id }}/customFields",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.API_KEY }}"
+            },
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1024,
+        -768
+      ],
+      "id": "dd3e894c-dd96-4959-9e98-e89d98bcbd6e",
+      "name": "1️⃣ Listar todos os campos"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pega a lista de custom fields do input anterior\nconst customFields = $input.first().json.customFields;\n\n// Encontra o campo \"Especialista Motive\"\nconst agenteField = customFields.find(field => \n  field.name === \"Especialista Motive\"\n);\n\n// Valida se encontrou\nif (!agenteField) {\n  throw new Error(\"Campo 'Especialista Motive' não encontrado!\");\n}\n\n// Retorna o ID\nreturn [{\n  json: {\n    agenteFieldId: agenteField.id\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -800,
+        -768
+      ],
+      "id": "436def35-b1d8-4500-beeb-c0ff7a66b17a",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://services.leadconnectorhq.com/contacts/{{ $json.contactId }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.API_KEY }}"
+            },
+            {
+              "name": "Version",
+              "value": "2021-04-15"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"customFields\": [\n    {\n      \"id\": \"{{ $json.fieldId }}\",\n      \"value\": \"{{ $json.agenteValue }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -400,
+        -768
+      ],
+      "id": "eca304fa-c8c1-4bf5-a721-4f1d2c26f047",
+      "name": "🔄 Atualizar Agente IA",
+      "notes": "Atualiza o campo customizado Especialista Motive no contato"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "dea4eade-a0b7-4fa8-be10-478ffe2fed82",
+              "name": "fieldId",
+              "value": "={{ $json.agenteFieldId }}",
+              "type": "string"
+            },
+            {
+              "id": "8c5d3e2f-1a3b-4c5e-9f2a-7b8c9d0e1f2a",
+              "name": "contactId",
+              "value": "={{ $('Start').first().json.contact_id }}",
+              "type": "string"
+            },
+            {
+              "id": "3f4e5d6c-7b8a-9c0d-1e2f-3a4b5c6d7e8f",
+              "name": "agenteValue",
+              "value": "=engagementkeeper",
+              "type": "string"
+            },
+            {
+              "id": "4a5b6c7d-8e9f-0a1b-2c3d-4e5f6a7b8c9d",
+              "name": "API_KEY",
+              "value": "={{ $('Start').first().json.API_KEY }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -624,
+        -768
+      ],
+      "id": "3c17c187-5973-4676-8e37-bc83beaa8464",
+      "name": "agente"
+    }
+  ],
+  "pinData": {
+    "Start": [
+      {
+        "json": {
+          "API_KEY": "pit-7f333e6f-a839-4f58-b371-778fed9dc2ea",
+          "location_id": "Bgi2hFMgiLLoRlOO0K5b",
+          "contact_id": "hUSt9aA0TwHoKUUToi4A",
+          "agenteValue": "engagementkeeper"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Execution Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execution Data": {
+      "main": [
+        [
+          {
+            "node": "1️⃣ Listar todos os campos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1️⃣ Listar todos os campos": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "agente": {
+      "main": [
+        [
+          {
+            "node": "🔄 Atualizar Agente IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "580872a9-8a68-4736-a932-f4b805d85c18",
+  "meta": {
+    "instanceId": "9d65e6caa0e89e696b77790e020391d74468b15f71b3dcdb63aad81f090f5e69"
+  },
+  "id": "rYlN2tPxMmTngVri",
+  "tags": [
+    {
+      "updatedAt": "2025-11-03T19:28:46.270Z",
+      "createdAt": "2025-11-03T19:28:46.270Z",
+      "id": "3znkt8vlq1yubGAB",
+      "name": "on"
+    }
+  ]
+}
